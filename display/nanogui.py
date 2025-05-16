@@ -10,7 +10,7 @@
 # border: False no border None use bgcolor, int: treat as color
 
 from colors import *  # Populate color LUT before use.
-from writer import Writer
+from display.writer import Writer
 import framebuf
 import gc
 import sys

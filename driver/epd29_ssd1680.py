@@ -20,7 +20,7 @@ import framebuf
 import asyncio
 from micropython import const
 from time import sleep_ms, sleep_us, ticks_ms, ticks_us, ticks_diff
-from boolpalette import BoolPalette
+from display.boolpalette import BoolPalette
 from machine import lightsleep, Pin
 
 

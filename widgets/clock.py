@@ -1,6 +1,6 @@
 import time
 from machine import RTC
-from ntp_client import NTPClient
+from widgets.ntp_client import NTPClient
 
 
 class Clock:

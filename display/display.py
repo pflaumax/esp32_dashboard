@@ -1,8 +1,8 @@
 import utime
 from machine import Pin, SPI
 import config
-import epd29_ssd1680
-from frame_buffer_wrapper import FrameBufferWrapper
+import driver.epd29_ssd1680 as epd29_ssd1680
+from display.frame_buffer_wrapper import FrameBufferWrapper
 
 
 class EPaperDisplay:
