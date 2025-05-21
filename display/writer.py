@@ -37,12 +37,6 @@ class DisplayState:
         self.text_col = 0
 
 
-"""def _get_id(device):
-    if not isinstance(device, framebuf.FrameBuffer):
-        raise ValueError("Device must be derived from FrameBuffer.")
-    return id(device)"""
-
-
 # Basic Writer class for monochrome displays
 class Writer:
 

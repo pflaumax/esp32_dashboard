@@ -13,7 +13,7 @@ class Clock:
             display_update_interval  # Seconds between time display updates
         )
         self.last_update = 0
-        self.last_display_update = 0  # Track when we last updated the display time
+        self.last_display_update = 0  # Track when last updated the display time
         self.cached_time = None  # Cache for time display
         self.cached_date = None  # Cache for date display
         self.ntp_client = NTPClient(timezone_offset=timezone_offset)

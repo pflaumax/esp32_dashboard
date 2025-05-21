@@ -15,6 +15,6 @@ class FrameBufferWrapper(framebuf.FrameBuffer):
         super().__init__(self.buffer, self.width, self.height, fmt)
 
     def show(self, deepsleep_after_refresh=False):
-        # Copy our buffer to the EPD's internal buffer
+        """Copy our buffer to the EPD's internal buffer"""
         self.epd._buffer[:] = self.buffer
         self.epd.show(deepsleep_after_refresh=deepsleep_after_refresh)
