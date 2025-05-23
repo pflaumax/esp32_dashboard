@@ -107,7 +107,6 @@ class WebsiteStats:
                         print("Root page views:", self.root_views)
                     else:
                         print(f"Error fetching website stats: {response.status_code}")
-                        # Don't reset values here, keep previous ones
 
                     response.close()
                     return True
@@ -122,7 +121,6 @@ class WebsiteStats:
                     return False
 
             finally:
-                # Always try to disconnect WiFi regardless of success/failure
                 try:
                     self.disconnect_wifi()
                 except:

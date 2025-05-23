@@ -14,8 +14,8 @@ class Clock:
         )
         self.last_update = 0
         self.last_display_update = 0  # Track when last updated the display time
-        self.cached_time = None  # Cache for time display
-        self.cached_date = None  # Cache for date display
+        self.cached_time = None
+        self.cached_date = None
         self.ntp_client = NTPClient(timezone_offset=timezone_offset)
         self.rtc = RTC()
 
@@ -50,7 +50,7 @@ class Clock:
                     year = ntp_time[0]
 
                 # Adjust weekday for RTC (0-6 to 1-7)
-                weekday = ntp_time[6] + 1  # 0-6 (Mon-Sun) to 1-7 (Mon-Sun)
+                weekday = ntp_time[6] + 1
 
                 # Update RTC
                 # Year, Month, Day, Weekday, Hour, Minute, Second, Millisecond
@@ -88,7 +88,7 @@ class Clock:
         time_tuple = self.get_time()
         hour, minute = time_tuple[3], time_tuple[4]
 
-        # Format: HH:MM (24-hour format)
+        # Format: HH:MM (24-hour)
         if include_seconds:
             second = time_tuple[5]
             return f"{hour:02d}:{minute:02d}:{second:02d}"
@@ -98,7 +98,7 @@ class Clock:
     def get_formatted_date(self):
         """Get formatted date string without year."""
         time_tuple = self.get_time()
-        weekday = time_tuple[6]  # 0-6 (Mon-Sun)
+        weekday = time_tuple[6]
         day = time_tuple[2]
         month = time_tuple[1]
 
@@ -123,11 +123,11 @@ class Clock:
         ]
         month_name = months[month - 1]  # Adjust for 1-indexed months
 
-        # Format: "Day Month DD" (no year, no commas)
+        # Format: "Day Month DD"
         return f"{day_name} {month_name} {day}"
 
     def get_time_for_display(self):
-        """Get formatted time and date for display, but only update if display_update_interval has passed."""
+        """Get formatted time and date for display."""
         current_time = time.time()
 
         # Update cached values if display update interval has passed or if no cache exists

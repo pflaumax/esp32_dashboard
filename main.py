@@ -64,9 +64,11 @@ class Dashboard:
         self.right_section_width = self.width - self.left_section_width
 
     def connect_network(self):
+        """Connect to Wi-Fi."""
         return self.network.connect()
 
     def update_data(self):
+        """Try to data update."""
         success = True
 
         if not self.network.is_connected():
@@ -107,6 +109,7 @@ class Dashboard:
         return success
 
     def render_time_section(self):
+        """Render date and time section data."""
         time_str, date_str = self.clock.get_time_for_display()
 
         w_time = Writer(self.display.fb, freesans20)
@@ -123,6 +126,8 @@ class Dashboard:
         w_date.printstring(date_str)
 
     def render_weather_section(self):
+        """Render weather section data."""
+
         weather_main, weather_details = self.weather.get_formatted_display()
 
         w_main = Writer(self.display.fb, freesans20)
@@ -146,24 +151,22 @@ class Dashboard:
         w_details.printstring(weather_details)
 
     def render_website_section(self):
+        """Render views of personal website section data."""
+
         label_text = "Site Views:"
-        value_text = (
-            self.website.get_views_for_display()
-        )  # Should return "235" or similar
+        value_text = self.website.get_views_for_display()
 
         w_label = Writer(self.display.fb, freesans20)
         w_value = Writer(self.display.fb, freesans17)
 
         left_section_width = self.width - self.right_section_width
 
-        # First line: "Site Views:"
         label_width = w_label.stringlen(label_text)
         x_label = (left_section_width - label_width) // 2
         y_label = self.top_section_height + 10
         w_label.set_textpos(y_label, x_label)
         w_label.printstring(label_text)
 
-        # Second line: number (e.g., "235")
         value_width = w_value.stringlen(value_text)
         x_value = (left_section_width - value_width) // 2
         y_value = y_label + 25  # Space between label and value
@@ -171,6 +174,8 @@ class Dashboard:
         w_value.printstring(value_text)
 
     def render_pihole_section(self):
+        """Render pi-hole ad block section data."""
+
         pihole_total, pihole_blocked = self.pihole.get_stats_for_display()
 
         w_total = Writer(self.display.fb, freesans17)
@@ -196,6 +201,8 @@ class Dashboard:
         w_blocked.printstring(pihole_blocked)
 
     def render_dashboard(self):
+        """Render whole sections display data."""
+
         try:
             self.display.fb.fill(0)
 
@@ -212,6 +219,7 @@ class Dashboard:
             return False
 
     def run(self):
+        """Run the dashboard"""
         print(
             f"Dashboard will update every {self.DISPLAY_UPDATE_INTERVAL} seconds EXACTLY."
         )

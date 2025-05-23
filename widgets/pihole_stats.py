@@ -7,8 +7,8 @@ class PiholeStats:
     def __init__(self, pihole_ip, password=None, api_token=None, update_interval=7200):
         self.pihole_ip = pihole_ip
         self.password = password
-        self.api_token = api_token  # New: Support for API token authentication
-        self.update_interval = update_interval  # Increased default to 2 hours
+        self.api_token = api_token
+        self.update_interval = update_interval
         self.base_url = f"http://{pihole_ip}/api"
         self.auth_endpoint = "/auth"
         self.summary_endpoint = "/stats/summary"
@@ -22,12 +22,12 @@ class PiholeStats:
 
         # Rate limiting protection
         self.request_times = []
-        self.max_requests_per_minute = 5  # Maximum allowed requests per minute
+        self.max_requests_per_minute = 1  # Maximum allowed requests per minute
         self.rate_limit_window = 60  # Window in seconds for rate limiting
         self.rate_limited_until = 0  # Timestamp until rate limiting expires
 
         # Retry configuration with exponential backoff
-        self.max_retries = 3
+        self.max_retries = 2
         self.base_retry_delay = 5  # Base delay in seconds
         self.cached_stats = None
 
@@ -208,7 +208,7 @@ class PiholeStats:
                     # Track this request for rate limiting
                     self._track_request()
 
-                    # Always use the original endpoint first - based on the logs it works!
+                    # Always use the original endpoint first
                     summary_url = self.base_url + self.summary_endpoint
                     headers = {}
 
@@ -293,7 +293,7 @@ class PiholeStats:
                     response.close()
 
                     if attempt < self.max_retries - 1:
-                        # Just retry the same endpoint - we can see it works from the logs!
+                        # Just retry the same endpoint
                         retry_delay = self.base_retry_delay * (2**attempt)
                         print(
                             f"Retrying stats update in {retry_delay} seconds... (Attempt {attempt+1}/{self.max_retries})"
@@ -323,11 +323,8 @@ class PiholeStats:
             print("Data is not a dictionary")
             return False
 
-        # Debug the data structure we received
         print(f"Received data keys: {', '.join(data.keys())}")
 
-        # The specific format in your logs shows a different structure
-        # Let's add support for it
         if (
             "queries" in data
             and isinstance(data["queries"], dict)
@@ -364,7 +361,7 @@ class PiholeStats:
             if not self.stats_data:
                 return 0
 
-            # Direct queries structure (like in your log)
+            # Direct queries structure
             if "queries" in self.stats_data and "total" in self.stats_data["queries"]:
                 return self.stats_data["queries"]["total"]
 
@@ -386,7 +383,7 @@ class PiholeStats:
             if not self.stats_data:
                 return 0
 
-            # Direct queries structure (like in your log)
+            # Direct queries structure
             if "queries" in self.stats_data and "blocked" in self.stats_data["queries"]:
                 return self.stats_data["queries"]["blocked"]
 

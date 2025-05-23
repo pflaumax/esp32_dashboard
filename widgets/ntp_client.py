@@ -32,7 +32,7 @@ class NTPClient:
 
             # Create UDP socket and set timeout
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(5)  # 5 second timeout
+            sock.settimeout(5)
 
             # Get IP address of the NTP server and send packet
             try:

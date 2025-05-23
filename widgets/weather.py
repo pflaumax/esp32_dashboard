@@ -39,7 +39,7 @@ class WeatherAPI:
                 print(f"Error updating weather: {e}")
                 return False
 
-        return True  # No update needed
+        return True
 
     def get_location_name(self):
         """Get city and country code."""
@@ -66,7 +66,7 @@ class WeatherAPI:
             return self.weather_data["rain"].get(
                 "3h", self.weather_data["rain"].get("1h", 0)
             )
-        return 0  # Return 0 if no rain data found
+        return 0  # 0 if no rain data found
 
     def get_humidity(self):
         """Get humidity percentage."""
@@ -96,7 +96,6 @@ class WeatherAPI:
         main_line = f"{location} {temp_str}"
 
         # Humidity and rainfall for secondary display (smaller font)
-        # Compact format without spaces
         secondary_line = f"Hum:{humid_str} Rain:{rain:.1f}mm"
 
         return main_line, secondary_line
