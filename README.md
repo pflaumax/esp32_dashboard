@@ -18,9 +18,8 @@ This project utilizes **Python** and **MicroPython** for the ESP32, interacts wi
 3.  [Pin connections](#pin-connections)
 4.  [Setup and installation](#setup-and-installation)
 5.  [Files and core components](#files-and-core-components)
-6.  [Visual demo](#visual-demo)
-7.  [Blog post](#blog-post)
-8.  [License](#license)
+6.  [Blog post & visual demo](#blog-post--visual-demo)
+7.  [License](#license)
 
 ## Hardware requirements
 
@@ -177,17 +176,12 @@ This section guides through setting up the project on host computer and the ESP3
 * `network_manager.py`: Utility to manage WiFi connections, handle reconnections, and maintain network status for the ESP32.
 
 
-## Visual demo
+## Blog post & visual demo
 
-[A GIF loop will be soon]
+[Read full post my blog](https://pflaumax.dev/blog/esp32-dashboard/)
 
-*(Consider embedding a static image as a placeholder if the GIF is not ready, or a link to an image/video if hosted elsewhere).*
+[A GIF loop will be soon](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRzdmNoaXZvczIzd2dpbThlMzRqeHZwOXY3eTg4NW4zODZleGEycyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TuZ8v66TzGeYJW23as/giphy.gif)
 
-## Blog Post
-
-[Coming soon]
-
-*(Link to your blog post once it's published).*
 
 ## License
 
