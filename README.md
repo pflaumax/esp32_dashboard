@@ -24,19 +24,11 @@ Here's how it looks in action:
 ## Table of contents
 
 1.  [Description](#description)
-<<<<<<< HEAD
 2.  [Blog post & visual demo](#blog-post--visual-demo)
 3.  [Hardware requirements](#hardware-requirements)
 4.  [Pin connections](#pin-connections)
 5.  [Setup and installation](#setup-and-installation)
 6.  [Files and core components](#files-and-core-components)
-=======
-2.  [Hardware requirements](#hardware-requirements)
-3.  [Pin connections](#pin-connections)
-4.  [Setup and installation](#setup-and-installation)
-5.  [Files and core components](#files-and-core-components)
-6.  [Blog post & visual demo](#blog-post--visual-demo)
->>>>>>> 51c74a82ac395dc29067cda8468c0cc3125d6d37
 7.  [License](#license)
 
 ## Hardware requirements
@@ -193,16 +185,6 @@ This section guides through setting up the project on host computer and the ESP3
 * `website_views.py`: Connects to the personal website's analytics API to retrieve and display visitor statistics.
 * `network_manager.py`: Utility to manage WiFi connections, handle reconnections, and maintain network status for the ESP32.
 
-
-<<<<<<< HEAD
-=======
-## Blog post & visual demo
-
-[Read full post my blog](https://pflaumax.dev/blog/esp32-dashboard/)
-
-[A GIF loop will be soon](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRzdmNoaXZvczIzd2dpbThlMzRqeHZwOXY3eTg4NW4zODZleGEycyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TuZ8v66TzGeYJW23as/giphy.gif)
-
->>>>>>> 51c74a82ac395dc29067cda8468c0cc3125d6d37
 
 ## License
 
