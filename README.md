@@ -11,16 +11,25 @@ ESP32 Dashboard is a project that displays useful information on a 2.9" e-paper 
 
 This project utilizes **Python** and **MicroPython** for the ESP32, interacts with the **OpenWeatherMAP API** for weather data, and the **Pi-hole API** for network statistics.
 
+
+## Blog post & visual demo
+
+I wrote a short blog post with some photos about the making of this project - **[you can read here](https://pflaumax.dev/blog/esp32-dashboard/)**.
+
+Here's how it looks in action:
+
+![ESP32 Dashboard](esp32_demo.gif)
+
+
 ## Table of contents
 
 1.  [Description](#description)
-2.  [Hardware requirements](#hardware-requirements)
-3.  [Pin connections](#pin-connections)
-4.  [Setup and installation](#setup-and-installation)
-5.  [Files and core components](#files-and-core-components)
-6.  [Visual demo](#visual-demo)
-7.  [Blog post](#blog-post)
-8.  [License](#license)
+2.  [Blog post & visual demo](#blog-post--visual-demo)
+3.  [Hardware requirements](#hardware-requirements)
+4.  [Pin connections](#pin-connections)
+5.  [Setup and installation](#setup-and-installation)
+6.  [Files and core components](#files-and-core-components)
+7.  [License](#license)
 
 ## Hardware requirements
 
@@ -177,17 +186,6 @@ This section guides through setting up the project on host computer and the ESP3
 * `network_manager.py`: Utility to manage WiFi connections, handle reconnections, and maintain network status for the ESP32.
 
 
-## Visual demo
-
-[A GIF loop will be soon]
-
-*(Consider embedding a static image as a placeholder if the GIF is not ready, or a link to an image/video if hosted elsewhere).*
-
-## Blog Post
-
-[Coming soon]
-
-*(Link to your blog post once it's published).*
 
 ## License
 
