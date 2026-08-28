@@ -22,7 +22,7 @@ class PiholeStats:
 
         # Rate limiting protection
         self.request_times = []
-        self.max_requests_per_minute = 1  # Maximum allowed requests per minute
+        self.max_requests_per_minute = 3
         self.rate_limit_window = 60  # Window in seconds for rate limiting
         self.rate_limited_until = 0  # Timestamp until rate limiting expires
 

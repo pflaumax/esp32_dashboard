@@ -1,4 +1,3 @@
-from main import Dashboard
+from main import start
 
-dashboard = Dashboard()
-dashboard.run()
+start()

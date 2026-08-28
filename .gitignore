@@ -1,3 +1,7 @@
 esp_venv/
 __pycache__/
 config.py
+.claude/
+.idea/
+.venv/
+NOTES.md

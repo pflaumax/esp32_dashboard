@@ -18,6 +18,9 @@ from fonts import freesans14, freesans17, freesans20
 class Dashboard:
     def __init__(self):
         self.DISPLAY_UPDATE_INTERVAL = 300  # 5 minutes in seconds
+        self.WDT_TIMEOUT = 120000  # 2 minutes in milliseconds
+        self.WDT_FEED_INTERVAL = 10  # Feed at least this often while sleeping
+        self.wdt = None
 
         print("Initializing display...")
         self.display = EPaperDisplay()
@@ -59,13 +62,26 @@ class Dashboard:
 
         # Define layout regions
         self.top_section_height = self.height // 2
-        self.bottom_section_height = self.height - self.top_section_height
         self.left_section_width = self.width // 2
         self.right_section_width = self.width - self.left_section_width
 
     def connect_network(self):
         """Connect to Wi-Fi."""
         return self.network.connect()
+
+    def feed_wdt(self):
+        """Feed the watchdog, if one is running."""
+        if self.wdt is not None:
+            self.wdt.feed()
+
+    def sleep(self, seconds):
+        """Sleep, feeding the watchdog so it doesn't reset us mid-wait."""
+        remaining = seconds
+        while remaining > 0:
+            interval = min(self.WDT_FEED_INTERVAL, remaining)
+            time.sleep(interval)
+            self.feed_wdt()
+            remaining -= interval
 
     def update_data(self):
         """Try to data update."""
@@ -82,6 +98,7 @@ class Dashboard:
             print(f"Error updating time: {e}")
             sys.print_exception(e)
             success = False
+        self.feed_wdt()
 
         try:
             self.weather.update_weather()
@@ -89,6 +106,7 @@ class Dashboard:
             print(f"Error updating weather: {e}")
             sys.print_exception(e)
             success = False
+        self.feed_wdt()
 
         try:
             self.pihole.update_stats()
@@ -96,15 +114,16 @@ class Dashboard:
             print(f"Error updating Pi-hole stats: {e}")
             sys.print_exception(e)
             success = False
+        self.feed_wdt()
 
+        # Runs last: this widget disconnects Wi-Fi in a finally block
         try:
-            wdt = machine.WDT(timeout=30000)
             self.website.update_views()
-            wdt.feed()
         except Exception as e:
             print(f"Error updating website views: {e}")
             sys.print_exception(e)
             success = False
+        self.feed_wdt()
 
         return success
 
@@ -114,14 +133,13 @@ class Dashboard:
 
         w_time = Writer(self.display.fb, freesans20)
         time_width_main = w_time.stringlen(time_str)
-        left_section_width = self.width - self.right_section_width
-        x_time = (left_section_width - time_width_main) // 2
+        x_time = (self.left_section_width - time_width_main) // 2
         w_time.set_textpos(10, x_time)
         w_time.printstring(time_str)
 
         w_date = Writer(self.display.fb, freesans14)
         date_width_main = w_date.stringlen(date_str)
-        x_date = (left_section_width - date_width_main) // 2
+        x_date = (self.left_section_width - date_width_main) // 2
         w_date.set_textpos(35, x_date)
         w_date.printstring(date_str)
 
@@ -159,16 +177,14 @@ class Dashboard:
         w_label = Writer(self.display.fb, freesans20)
         w_value = Writer(self.display.fb, freesans17)
 
-        left_section_width = self.width - self.right_section_width
-
         label_width = w_label.stringlen(label_text)
-        x_label = (left_section_width - label_width) // 2
+        x_label = (self.left_section_width - label_width) // 2
         y_label = self.top_section_height + 10
         w_label.set_textpos(y_label, x_label)
         w_label.printstring(label_text)
 
         value_width = w_value.stringlen(value_text)
-        x_value = (left_section_width - value_width) // 2
+        x_value = (self.left_section_width - value_width) // 2
         y_value = y_label + 25  # Space between label and value
         w_value.set_textpos(y_value, x_value)
         w_value.printstring(value_text)
@@ -228,6 +244,9 @@ class Dashboard:
         self.render_dashboard()
         self.last_refresh_time = time.time()
 
+        print(f"Starting watchdog ({self.WDT_TIMEOUT // 1000}s timeout)")
+        self.wdt = machine.WDT(timeout=self.WDT_TIMEOUT)
+
         def get_sleep_time():
             current_time = time.time()
             elapsed = current_time - self.last_refresh_time
@@ -241,7 +260,7 @@ class Dashboard:
 
                 if sleep_time > 0:
                     print(f"Sleeping for {sleep_time:.0f} seconds until next update")
-                    time.sleep(sleep_time)
+                    self.sleep(sleep_time)
 
                 current_time = time.time()
                 elapsed = current_time - self.last_refresh_time
@@ -263,11 +282,13 @@ class Dashboard:
                 print(f"Error in main loop: {e}")
                 sys.print_exception(e)
                 print("Reconnecting network and retrying in 60 seconds...")
+                self.feed_wdt()
                 self.connect_network()
-                time.sleep(60)
+                self.sleep(60)
 
 
-if __name__ == "__main__":
+def start():
+    """Start the dashboard. Shared by boot.py and by running main.py directly."""
     print("Starting E-Paper Dashboard")
     try:
         dashboard = Dashboard()
@@ -278,9 +299,16 @@ if __name__ == "__main__":
             dashboard.run()
         else:
             print("Failed to connect to network. Check your WiFi credentials.")
+            print("Restarting in 300 seconds...")
+            time.sleep(300)
+            machine.reset()
     except Exception as e:
         print(f"Critical error: {e}")
         sys.print_exception(e)
         print("Restarting in 300 seconds...")
         time.sleep(300)
         machine.reset()
+
+
+if __name__ == "__main__":
+    start()

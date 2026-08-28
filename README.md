@@ -61,7 +61,7 @@ This section guides through setting up the project on host computer and the ESP3
     First, clone the project repository to local machine.
     ```bash
     $ git clone https://github.com/pflaumax/esp32_dashboard
-    $ cd esp32-dashboard
+    $ cd esp32_dashboard
     ```
 
 2.  **Install host computer requirements:**
@@ -87,81 +87,85 @@ This section guides through setting up the project on host computer and the ESP3
         ```
         (Replace `/dev/ttyUSB0` with your ESP32's serial port and `esp32-generic-XXX.bin` with the downloaded firmware file name).
 
-4.  **Prepare font files:**
-    The dashboard requires MicroPython-compatible font files (`.py`).
-    * It can be generated from standard font formats (like TTF) using [Peter Hinch's Official GitHub repository - micropython-font-to-py](https://github.com/peterhinch/micropython-font-to-py) tool.
-    * Alternatively, pre-generated font files might be included in the repository or available for download. Ensure you have the necessary font files (e.g., `freesans20.py`).
+4.  **Font files:**
+    Nothing to do here - the three fonts the dashboard needs are already in the `fonts/` directory and get uploaded in step 6.
+
+    They are `freesans14.py`, `freesans17.py` and `freesans20.py`, and those exact module names are hardcoded in `main.py` (`from fonts import freesans14, freesans17, freesans20`). If you want different fonts or sizes, generate them from a TTF with [Peter Hinch's micropython-font-to-py](https://github.com/peterhinch/micropython-font-to-py) tool and update that import plus the `Writer(...)` calls in `main.py` to match - adding a differently named font file alone will fail at boot with an ImportError.
 
 5.  **Configure `config.py`:**
-    This file contains all personalized settings. Create a `config.py` file in the root of the cloned repository with the following information, adjusting values as needed:
-    * **WiFi credentials:**
-        ```python
+    This file contains all personalized settings. Create a `config.py` file in the root of the cloned repository. Settings are grouped into classes, and the names below are the ones the code reads, so keep them exactly as written:
+
+    ```python
+    class Network_Config:
         WIFI_SSID = "your_wifi_ssid"
         WIFI_PASSWORD = "your_wifi_password"
-        ```
-    * **Time zone offset:**
-        ```python
-        TIMEZONE_OFFSET = "3" # Example for EEST
-        ```
-    * **OpenWeatherMap API:**
-        ```python
-        API_KEY = "your_api_key"  
+
+
+    class Time_Config:
+        TIMEZONE_OFFSET = 3  # Hours, numeric. Example for EEST
+
+
+    class Weather_Config:
+        API_KEY = "your_openweathermap_api_key"
         CITY_ID = "your_city_id"
-        ```
-    * **Website stats API endpoint:**
-        ```python
-        STATS_API_URL = "https://your.website.com/api/stats"
-        ```
-    * **Pi-hole configuration:**
-        ```python
-        PIHOLE_IP = "your_pihole_ip" 
-        PIHOLE_PASSWORD_API = "your_pihole_api_password"
+
+
+    class Website_Config:
+        API_URL = "https://your.website.com/api/stats"
+
+
+    class Pihole_Config:
+        PIHOLE_IP = "your_pihole_ip"
+        PIHOLE_PASSWORD = "your_pihole_api_password"
         # For new version v6.x.x find password API in Pi-hole: Settings > Web interface/API > Enable expert mode in the top right corner > Enable 2FA (optional) > Configure app password (API)
-        ```
+
+
+    class EPD_Config:
+        BUSY_PIN = 4
+        RST_PIN = 16
+        DC_PIN = 17
+        CS_PIN = 5
+    ```
+
+    `EPD_Config` must match the wiring in [Pin connections](#pin-connections). The SPI pins (CLK 18, DIN 23, MISO 19) are fixed in `display/display.py`.
 
 6.  **Upload files to ESP32:**
     Connect your ESP32 to your computer. Identify its serial port (e.g., `/dev/ttyUSB0` on Linux, `COM3` on Windows).
-    Upload the project files and MicroPython libraries to the ESP32's root directory using `ampy`.
-    * **All core project files:**
+    Upload the project files with `ampy`. **The directory layout must be preserved on the device** - the code imports modules as packages (e.g. `from widgets.clock import Clock`), so uploading the files flat into the root will not work.
+    * **Core project files:**
         ```bash
         $ ampy --port /dev/ttyUSB0 put main.py
         $ ampy --port /dev/ttyUSB0 put boot.py
         $ ampy --port /dev/ttyUSB0 put config.py
         ```
-    * **E-paper driver library from `"driver"` directory:**
+    * **Package directories** (`ampy put <local_dir> <remote_dir>` copies the directory recursively):
         ```bash
-        $ ampy --port /dev/ttyUSB0 put epd_29_ssd1680.py 
-        # Or your specific display driver name
+        $ ampy --port /dev/ttyUSB0 put driver driver
+        $ ampy --port /dev/ttyUSB0 put display display
+        $ ampy --port /dev/ttyUSB0 put fonts fonts
+        $ ampy --port /dev/ttyUSB0 put widgets widgets
         ```
-    * **Libraries from `"display"` directory:**
+    * **Verify the upload:**
         ```bash
-        $ ampy --port /dev/ttyUSB0 put nanogui.py
-        # Add other components (e.g., boolpalette.py, writer.py)
-        ```
-    * **Font files from `"fonts"` directory:**
-        ```bash
-        $ ampy --port /dev/ttyUSB0 put freesans20.py
-        # Upload all necessary font files
-        ```
-    * **Widgets and additional support files from `"widgets` directory:**
-        ```bash
-        $ ampy --port /dev/ttyUSB0 put clock.py
-        # And other components 
+        $ ampy --port /dev/ttyUSB0 ls
+        # Expected: /boot.py /config.py /main.py /display /driver /fonts /widgets
         ```
 
 7.  **Run the dashboard:**
-    * **Option 1: Reset the ESP32.** Press the reset button on board. If `main.py` and `boot.py` is present, MicroPython will execute it automatically.
-    * **Option 2: Run Manually via `ampy` (for testing).**
-        ```bash
-        $ ampy --port /dev/ttyUSB0 run main.py
-        ```
+    Press the reset button on the board. `boot.py` runs automatically and starts the dashboard loop.
+
+    To watch it run, open a serial terminal - every widget reports its state as it updates:
+    ```bash
+    $ pyserial-miniterm /dev/ttyUSB0 115200
+    ```
+    Note that `ampy run main.py` is not a useful way to test this project: the dashboard loop never exits, and `ampy run` waits for the script to finish, so the command just hangs.
 
 ## Files and core components
 
 **This project typically consists of the following files to be uploaded to the ESP32:**
 
 * `main.py`: The main script that initializes the display, networking, and orchestrates the fetching and displaying of data.
-* `boot.py`: This script runs on boot and is used to configure low-level system settings.
+* `boot.py`: Runs automatically on boot. It constructs the `Dashboard` from `main.py` and starts its update loop, which never returns - so `main.py` is imported as a module rather than run as a script.
 * `config.py`: Contains all user-specific configurations like WiFi, API keys, and other settings.
 
 **E-paper driver library:**
@@ -170,12 +174,12 @@ This section guides through setting up the project on host computer and the ESP3
 **Font files (`*.py`):** 
 * Python files generated by `micropython-font-to-py`, defining pixel patterns for different characters.
 
-**Display libraries (include files from the [official repository micropython-nano-gui by Peter Hinch](https://github.com/peterhinch/micropython-nano-gui))**:
-* `nanogui.py`: The core GUI library. It provides the framework for creating graphical user interfaces with widgets like labels, buttons, and meters on framebuf-based displays.
-* `writer.py`: A module for rendering Python fonts. It's used by `nanogui` to display text with various fonts.
-* `display`: Contains utility classes and methods to manage the frame buffer, handle screen refreshes, and abstract low-level display operations. 
-* `boolpalette.py`: Defines color palettes for 1-bit or multi-bit frame buffers, essential for correct color rendering on monochrome e-paper displays.  
-* `frame_buffer_wrapper.py`: A wrapper around the MicroPython framebuf module to extend or customize drawing capabilities for the e-paper display.
+**Display libraries (`display/` directory).** Two of these are vendored from the [official repository micropython-nano-gui by Peter Hinch](https://github.com/peterhinch/micropython-nano-gui):
+* `writer.py`: (vendored) Renders the Python font files, handling text positioning, word wrap and tab stops. This is what the dashboard draws all its text with.
+* `boolpalette.py`: (vendored) Defines the colour palette for 1-bit frame buffers, needed for correct rendering on a monochrome e-paper panel.
+* `display.py`: `EPaperDisplay` - sets up SPI and the display pins, owns the frame buffer, and exposes the drawing primitives.
+* `frame_buffer_wrapper.py`: A wrapper around MicroPython's `framebuf` that renders into its own buffer and copies it into the driver's buffer on `show()`.
+* `nanogui.py`: (vendored) **Not used by this project and not importable as shipped** - it does `from colors import *`, and there is no `colors.py` here. It is kept only as a reference for anyone who wants to build out the nano-gui widget set (labels, meters, dials); the dashboard draws text directly with `writer.py` instead.
 
 **Widgets and other support files:**
 * `clock.py`: Implements the clock widget, managing time display synchronized via NTP and updating the dashboard in real time. 
