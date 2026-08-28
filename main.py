@@ -33,6 +33,8 @@ class Dashboard:
         print("Setting up clock...")
         self.clock = Clock(
             timezone_offset=config.Time_Config.TIMEZONE_OFFSET,
+            # Optional, so a config.py written before TZ support keeps working
+            tz=getattr(config.Time_Config, "TZ", None),
             display_update_interval=self.DISPLAY_UPDATE_INTERVAL,
         )
 
@@ -265,7 +267,7 @@ class Dashboard:
                 current_time = time.time()
                 elapsed = current_time - self.last_refresh_time
                 print(
-                    f"\n[{time.localtime()}] Scheduled update cycle (after {elapsed:.0f}s)..."
+                    f"\n[{self.clock.get_time()}] Scheduled update cycle (after {elapsed:.0f}s)..."
                 )
 
                 self.update_data()

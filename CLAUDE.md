@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MicroPython firmware for an ESP32-WROOM driving a 2.9" WeAct Studio SSD1680 e-paper display (296x128, mono). It renders a four-quadrant dashboard (time/date, weather, website views, Pi-hole stats) refreshed every 5 minutes.
 
-There is no build system, test suite, or linter config. The code is Black-formatted by convention. Runtime code targets the MicroPython stdlib (`machine`, `network`, `framebuf`, `urequests`, `ujson`, `utime`) and **cannot be executed on the host** — verification means flashing to the device and reading the serial REPL.
+There is no build system or linter config. The code is Black-formatted by convention. Runtime code targets the MicroPython stdlib (`machine`, `network`, `framebuf`, `urequests`, `ujson`, `utime`) and **cannot be executed on the host** — verification means flashing to the device and reading the serial REPL. The one exception is `widgets/timezone.py`, which imports nothing but `time` and is covered by `tests/test_timezone.py`; run that on the host after touching it.
 
 `requirements.txt` is host tooling, but don't `pip install -r` it blindly: alongside `ampy`/`esptool`/`rshell`/`pyserial` it pins `RPi.GPIO`, `spidev`, `pyudev`, and `epd-library`, which are Linux/Raspberry-Pi-only and fail to build on macOS. Install the two tools you actually need (`adafruit-ampy`, `esptool`) instead. Note also that `.gitignore` ignores `esp_venv/`, not the `.venv/` that is currently checked out here.
 
@@ -27,6 +27,9 @@ ampy --port $PORT put widgets widgets
 
 ampy --port $PORT ls           # inspect device filesystem
 
+# The only host-runnable check in the repo
+python3 tests/test_timezone.py
+
 # Serial REPL / live logs (every widget logs its state via print)
 pyserial-miniterm $PORT 115200
 
@@ -45,7 +48,7 @@ Gitignored and not in the repo; it must be created before anything runs. Setting
 
 ```python
 class Network_Config:  WIFI_SSID, WIFI_PASSWORD
-class Time_Config:     TIMEZONE_OFFSET          # hours, numeric
+class Time_Config:     TZ, TIMEZONE_OFFSET      # POSIX TZ string; hours fallback, may be fractional
 class Weather_Config:  API_KEY, CITY_ID         # OpenWeatherMap
 class Website_Config:  API_URL
 class Pihole_Config:   PIHOLE_IP, PIHOLE_PASSWORD
@@ -78,5 +81,6 @@ Layout is only half-parameterized, so don't trust `Dashboard.__init__` as the si
 - `widgets/website_views.py` manages Wi-Fi itself: it reconnects on entry and **disconnects in a `finally` block** on every update, independent of `NetworkManager`. It runs last in `update_data()` for that reason; anything added after it will find the network down.
 - `widgets/pihole_stats.py` targets the Pi-hole v6 session API (`/api/auth` → `X-FTL-SID`/`X-FTL-CSRF` → `/api/stats/summary` → `/api/logout`) with v5 fallbacks in `_validate_stats_data` and the getters. Its update interval is 3600s, unlike the other widgets. The self-imposed rate limit is deliberate — Pi-hole bans aggressive clients — and `max_requests_per_minute` is sized at exactly one cycle's three requests (auth, stats, logout). Lowering it starves `logout()`, which then clears the SID locally only and leaks the server-side session.
 - `display/nanogui.py` is vendored but unused and would fail to import (`from colors import *` — no `colors.py` in the repo). Only `writer.py` and `boolpalette.py` from the nano-gui vendor set are live.
-- `clock.py` and `ntp_client.py` both clamp any NTP year > 2030 back to 2025 to survive garbage NTP responses; the RTC also seeds a hardcoded 2025 default at construction.
+- **The RTC holds UTC, not local time.** `Clock.get_time()` is the single place the conversion happens, so everything must read the time through it rather than calling `time.localtime()` directly — that is what makes a DST change take effect when it is due instead of at the next hourly NTP sync. `widgets/timezone.py` parses `Time_Config.TZ` (a POSIX TZ string, `Mm.n.d` transitions only); `TIMEZONE_OFFSET` in hours is the fallback when `TZ` is unset or unparseable, and a bad `TZ` degrades to it with a warning rather than raising, because `start()` would otherwise reboot-loop on a config typo. It is the one runtime module that is pure enough to run on the host — `tests/test_timezone.py` checks it against CPython's `zoneinfo`.
+- `NTPClient.NTP_DELTA` is derived at runtime from `time.gmtime(0)[0]`, because MicroPython's epoch is 2000-01-01 on baremetal ports and 1970-01-01 on unix/CPython. Hardcoding the 1970 delta on an esp32 shifts the clock 30 years and 2 weekdays; the year clamps that used to paper over that are gone, and `get_time()` now returns `None` on failure instead of a fabricated time. The RTC still seeds a hardcoded 2025 default at construction.
 - E-paper full refreshes are slow and wear the panel — that, not CPU cost, is why the update interval is 300s.

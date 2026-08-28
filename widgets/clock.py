@@ -1,13 +1,18 @@
 import time
 from machine import RTC
 from widgets.ntp_client import NTPClient
+from widgets.timezone import Timezone
 
 
 class Clock:
     def __init__(
-        self, timezone_offset=0, update_interval=3600, display_update_interval=300
+        self,
+        timezone_offset=0,
+        tz=None,
+        update_interval=3600,
+        display_update_interval=300,
     ):
-        self.timezone_offset = timezone_offset  # Offset in hours
+        self.timezone_offset = timezone_offset  # Offset in hours, may be fractional
         self.update_interval = update_interval  # Seconds between NTP updates
         self.display_update_interval = (
             display_update_interval  # Seconds between time display updates
@@ -16,10 +21,23 @@ class Clock:
         self.last_display_update = 0  # Track when last updated the display time
         self.cached_time = None
         self.cached_date = None
-        self.ntp_client = NTPClient(timezone_offset=timezone_offset)
+        self.ntp_client = NTPClient()
         self.rtc = RTC()
 
-        # Initialize RTC with a default time in case NTP fails
+        # A POSIX TZ rule wins over the plain offset, but a typo in it must not
+        # take the dashboard down - start() would just reboot-loop on it.
+        self.timezone = None
+        if tz:
+            try:
+                self.timezone = Timezone(tz)
+                print(f"Timezone rule: {tz}")
+            except Exception as e:
+                print(f"Invalid TZ {tz!r} ({e}), falling back to TIMEZONE_OFFSET")
+        if self.timezone is None:
+            self.timezone = Timezone(offset_hours=timezone_offset)
+            print(f"Fixed timezone offset: {timezone_offset} h (no DST)")
+
+        # Initialize RTC with a default UTC time in case NTP fails
         # Year, Month, Day, Weekday, Hour, Minute, Second, Millisecond
         default_time = (
             2025,
@@ -34,32 +52,32 @@ class Clock:
         self.rtc.datetime(default_time)
 
     def update_time(self, force=False):
-        """Update system time from NTP server if update_interval has passed."""
+        """Update system time from NTP server if update_interval has passed.
+
+        The RTC is kept on UTC. The timezone offset is applied in get_time()
+        instead, so it is never baked into the stored time.
+        """
         current_time = time.time()
 
         if force or (current_time - self.last_update > self.update_interval):
             print("Updating time from NTP server...")
             try:
-                # Get time from NTP
+                # Get UTC time from NTP
                 ntp_time = self.ntp_client.get_time()
 
-                if ntp_time[0] > 2030:
-                    print(f"Invalid year from NTP: {ntp_time[0]}")
-                    year = 2025
-                else:
-                    year = ntp_time[0]
+                if ntp_time is None:
+                    print("No NTP time available, keeping current RTC time")
+                    return False
 
-                # Adjust weekday for RTC (0-6 to 1-7)
-                weekday = ntp_time[6] + 1
-
-                # Update RTC
+                # Update RTC. Both time.gmtime() and RTC.datetime() count the
+                # weekday 0-6 from Monday, so it carries over unchanged.
                 # Year, Month, Day, Weekday, Hour, Minute, Second, Millisecond
                 self.rtc.datetime(
                     (
-                        year,
+                        ntp_time[0],
                         ntp_time[1],
                         ntp_time[2],
-                        weekday,
+                        ntp_time[6],
                         ntp_time[3],
                         ntp_time[4],
                         ntp_time[5],
@@ -70,7 +88,11 @@ class Clock:
                 self.last_update = current_time
                 # Force display update after NTP sync
                 self.last_display_update = 0
-                print("Time updated successfully")
+                zone = self.timezone.name()
+                if zone:
+                    print(f"Time updated successfully ({zone})")
+                else:
+                    print("Time updated successfully")
                 return True
 
             except Exception as e:
@@ -80,8 +102,13 @@ class Clock:
         return True
 
     def get_time(self):
-        """Get current time tuple."""
-        return time.localtime()
+        """Get current local time tuple.
+
+        This is the single place where the UTC the RTC holds becomes local
+        time, which is what makes a DST change take effect the moment it is
+        due rather than at the next NTP sync.
+        """
+        return self.timezone.localtime(time.time())
 
     def get_formatted_time(self, include_seconds=False):
         """Get formatted time string without date."""

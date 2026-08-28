@@ -102,7 +102,14 @@ This section guides through setting up the project on host computer and the ESP3
 
 
     class Time_Config:
-        TIMEZONE_OFFSET = 3  # Hours, numeric. Example for EEST
+        # Preferred: a POSIX TZ string, which handles DST automatically.
+        # Find yours in the "TZ identifier"/"POSIX TZ" column of the tz database,
+        # or read it off a Linux/macOS box with: tail -1 /usr/share/zoneinfo/<Area>/<City>
+        TZ = "EET-2EEST,M3.5.0/3,M10.5.0/4"  # Europe/Kyiv
+
+        # Fallback, used when TZ is unset or unparseable. Hours, numeric;
+        # fractional values work (5.5 for IST). No DST handling.
+        TIMEZONE_OFFSET = 3
 
 
     class Weather_Config:
